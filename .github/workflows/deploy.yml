@@ -57,9 +57,9 @@ jobs:
 
           # A wrong `base` serves HTML fine and 404s every asset. Any root-relative
           # path outside the base is a failure. [^/] skips protocol-relative URLs.
-          if echo "$HOME_HTML" | grep -oE '(href|src)="/[^/][^"]*"' | grep -vq '"/posting-x/'; then
+          if echo "$HOME_HTML" | grep -oE '(href|src)="/[^/][^"]*"' | grep -vq '"/blog/'; then
             echo "FAIL: paths outside the configured base"
-            echo "$HOME_HTML" | grep -oE '(href|src)="/[^/][^"]*"' | grep -v '"/posting-x/' | head
+            echo "$HOME_HTML" | grep -oE '(href|src)="/[^/][^"]*"' | grep -v '"/blog/' | head
             exit 1
           fi
 

@@ -1,5 +1,5 @@
 {
-  "name": "posting-x",
+  "name": "blog",
   "type": "module",
   "version": "0.1.0",
   "packageManager": "pnpm@10.9.0",

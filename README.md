@@ -1,10 +1,10 @@
-# posting-x
+# blog
 
 I pick one paper, take one claim out of it, rebuild that claim in the smallest
 amount of code that could settle it, and publish what happened. Failed
 reproductions get published too.
 
-Site: https://initcatcher.github.io/posting-x/
+Site: https://initcatcher.github.io/blog/
 
 ## Stack
 
