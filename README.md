@@ -18,7 +18,9 @@ the diff base if you ever want to pull changes in.
 
 ## Local
 
-Requires Node 22 and pnpm 10.9.0 (pinned via `packageManager`).
+Node 22. pnpm is pinned to 9.14.4 by the `packageManager` field, and `.npmrc`
+sets `manage-package-manager-versions = true`, so a newer local pnpm switches
+down to 9.14.4 automatically. That matches how `pnpm-lock.yaml` was generated.
 
 ```bash
 pnpm install
@@ -27,10 +29,12 @@ pnpm build    # astro build + pagefind index
 pnpm preview
 ```
 
-`pnpm install` needs `pnpm.onlyBuiltDependencies` in `package.json`. pnpm 10
-blocks dependency lifecycle scripts by default, and both `sharp` and `pagefind`
-fetch native binaries in postinstall. Without the allowlist, install succeeds
-and the build fails later. Verify with:
+**If you ever bump the pin to pnpm 10 or newer,** add an allowlist first. pnpm 10
+stopped running dependency lifecycle scripts by default, and both `sharp` and
+`pagefind` fetch native binaries in postinstall. Without it, `pnpm install`
+succeeds and the build fails later on the missing binaries. In pnpm 10 that is
+`pnpm.onlyBuiltDependencies` in `package.json`; newer versions moved it to
+`pnpm-workspace.yaml`. Verify either way with:
 
 ```bash
 node -e "require('sharp')" && pnpm exec pagefind --version
