@@ -1,0 +1,74 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # node-version is pinned to 22 on purpose: the upstream theme's own CI
+      # tests 22 and 23, while withastro/action defaults to 24. The pnpm
+      # version comes from the "packageManager" field in package.json, which
+      # also keeps the pnpm-10-only "onlyBuiltDependencies" setting valid.
+      - uses: withastro/action@v6
+        with:
+          node-version: 22
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
+
+      # The build being green only proves dist/ was produced. These four checks
+      # run against the deployed site, because every failure they catch is
+      # silent: the workflow stays green while the site is wrong.
+      - name: Smoke check
+        run: |
+          set -euo pipefail
+          BASE="${{ steps.deployment.outputs.page_url }}"   # has a trailing slash
+          echo "checking $BASE"
+
+          HOME_HTML=$(curl -fsSL --retry 5 --retry-delay 5 --retry-all-errors "$BASE")
+
+          # Theme defaults left in src/config.ts. Only <title> is checked, so a
+          # post body that legitimately mentions the theme does not trip this.
+          if echo "$HOME_HTML" | grep -qiE '<title>[^<]*(Fuwari|Demo Site)'; then
+            echo "FAIL: src/config.ts still has theme defaults"
+            exit 1
+          fi
+
+          # A wrong `base` serves HTML fine and 404s every asset. Any root-relative
+          # path outside the base is a failure. [^/] skips protocol-relative URLs.
+          if echo "$HOME_HTML" | grep -oE '(href|src)="/[^/][^"]*"' | grep -vq '"/posting-x/'; then
+            echo "FAIL: paths outside the configured base"
+            echo "$HOME_HTML" | grep -oE '(href|src)="/[^/][^"]*"' | grep -v '"/posting-x/' | head
+            exit 1
+          fi
+
+          # The actual goal of this deploy: a post I wrote is reachable.
+          curl -fsSI "${BASE}posts/one-claim-at-a-time/" > /dev/null \
+            || { echo "FAIL: post 404"; exit 1; }
+
+          # pagefind runs after astro build; a missing index kills search silently.
+          curl -fsSI "${BASE}pagefind/pagefind.js" > /dev/null \
+            || { echo "FAIL: search index missing"; exit 1; }
+
+          echo "smoke check passed"
